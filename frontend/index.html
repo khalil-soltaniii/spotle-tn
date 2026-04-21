@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Spotle TN - Daily Tunisian music guessing game. Guess the mystery artist in 10 tries!">
+    <meta name="keywords" content="spotle, music game, tunisian music, maghreb, daily puzzle">
+    <meta name="author" content="Spotle TN">
+
+    <!-- Open Graph meta tags -->
+    <meta property="og:title" content="Spotle TN - Tunisian Music Game">
+    <meta property="og:description" content="Guess the mystery Tunisian artist in 10 tries!">
+    <meta property="og:type" content="website">
+
+    <title>Spotle TN - Tunisian Music Guessing Game</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <!-- Main Container -->
+    <div class="container">
+
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1 class="logo">🎵 SPOTLE TN</h1>
+                <p class="tagline">Guess the Tunisian Artist</p>
+                <div class="day-counter" id="dayCounter">Day #1</div>
+            </div>
+            <div class="header-buttons"
+                style="position: absolute; top: 1rem; right: 1rem; display: flex; gap: 0.5rem; z-index: 100;">
+                <button class="stats-btn" id="resetBtn" aria-label="Reset Today's Game" title="Reset and play again"
+                    style="position: static !important; display: flex !important; align-items: center; gap: 0.25rem;">
+                    🔄 Reset
+                </button>
+                <button class="stats-btn" id="statsBtn" aria-label="View Statistics"
+                    style="position: static !important; display: flex !important; align-items: center; gap: 0.25rem;">
+                    📊 Stats
+                </button>
+            </div>
+        </header>
+
+        <!-- Game Instructions (collapsed by default after first visit) -->
+        <div class="instructions" id="instructions">
+            <h2>How to Play</h2>
+            <p>Guess the mystery Tunisian/Maghreb artist in <strong>10 tries</strong>!</p>
+            <ul>
+                <li>🟩 <strong>Green</strong> = Exact match</li>
+                <li>🟨 <strong>Yellow</strong> = Close (within range or same family)</li>
+                <li>⬜ <strong>Gray</strong> = Not close</li>
+                <li>⬆️⬇️ <strong>Arrows</strong> = Direction hints</li>
+            </ul>
+            <button class="close-instructions" id="closeInstructions">Got it!</button>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="search-container">
+            <div class="search-wrapper">
+                <input type="text" id="artistSearch" class="search-input" placeholder="Search for an artist..."
+                    autocomplete="off" aria-label="Artist search input" />
+                <div class="search-icon">🔍</div>
+            </div>
+            <div class="autocomplete-dropdown" id="autocompleteDropdown"></div>
+        </div>
+
+        <!-- Guess Grid -->
+        <div class="guess-grid-container">
+            <div class="guess-grid-header">
+                <div class="grid-cell header-cell">Artist</div>
+                <div class="grid-cell header-cell">Year</div>
+                <div class="grid-cell header-cell">Genre</div>
+                <div class="grid-cell header-cell">Country</div>
+                <div class="grid-cell header-cell">Rank</div>
+                <div class="grid-cell header-cell">Size</div>
+            </div>
+            <div class="guess-grid" id="guessGrid">
+                <!-- Guess rows will be populated dynamically -->
+            </div>
+        </div>
+
+        <!-- Attempts Counter -->
+        <div class="attempts-counter" id="attemptsCounter">
+            <span class="attempts-text">Attempts: <strong id="attemptsUsed">0</strong> / <strong>10</strong></span>
+        </div>
+
+    </div>
+
+    <!-- Win/Lose Modal -->
+    <div class="modal" id="resultModal">
+        <div class="modal-content">
+            <div class="modal-header" id="modalHeader">
+                <!-- Title will be set dynamically -->
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Content will be set dynamically -->
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-primary" id="shareBtn">📤 Share Result</button>
+                <button class="btn btn-secondary" id="closeModalBtn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Modal -->
+    <div class="modal" id="statsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📊 Your Statistics</h2>
+            </div>
+            <div class="modal-body">
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="statPlayed">0</div>
+                        <div class="stat-label">Played</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="statWinRate">0%</div>
+                        <div class="stat-label">Win Rate</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="statCurrentStreak">0</div>
+                        <div class="stat-label">Current Streak</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="statMaxStreak">0</div>
+                        <div class="stat-label">Max Streak</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="closeStatsBtn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast" id="toast"></div>
+
+    <!-- Scripts -->
+    <script src="api.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
