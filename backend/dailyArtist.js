@@ -13,16 +13,16 @@ const selectDailyArtist = async (date) => {
         }
 
         // Get random artist not used in last 365 days
-        const artist = await db.getRandomUnusedArtist(365);
+        let artist = await db.getRandomUnusedArtist(365);
 
         if (!artist) {
-            console.error('❌ No available artists for daily selection');
-            // Fallback: get any random active artist
+            console.warn('⚠️ All artists used recently — falling back to any random active artist');
+            // BUG FIX: artist was null, accessing artist.id would crash. Use a separate variable.
             const fallback = await db.query('SELECT id FROM artists WHERE active = true ORDER BY RANDOM() LIMIT 1');
             if (fallback.rows.length === 0) {
                 throw new Error('No active artists in database');
             }
-            artist.id = fallback.rows[0].id;
+            artist = fallback.rows[0]; // assign the fallback row directly
         }
 
         // Set the daily artist

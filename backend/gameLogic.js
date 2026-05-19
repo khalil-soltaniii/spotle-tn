@@ -116,12 +116,21 @@ const calculateGroupSizeFeedback = (guessedSize, mysterySize) => {
     }
 };
 
+// Calculate feedback for gender
+const calculateGenderFeedback = (guessedGender, mysteryGender) => {
+    if (guessedGender === mysteryGender) {
+        return { color: 'green' };
+    }
+    return { color: 'gray' };
+};
+
 // Main feedback calculation function
 const calculateFeedback = async (guessedArtist, mysteryArtist) => {
     const feedback = {
         debut_year: calculateYearFeedback(guessedArtist.debut_year, mysteryArtist.debut_year),
         genre: await calculateGenreFeedback(guessedArtist.genre, mysteryArtist.genre),
         nationality: calculateNationalityFeedback(guessedArtist.nationality, mysteryArtist.nationality),
+        gender: calculateGenderFeedback(guessedArtist.gender, mysteryArtist.gender),
         popularity_rank: calculatePopularityFeedback(guessedArtist.popularity_rank, mysteryArtist.popularity_rank),
         group_size: calculateGroupSizeFeedback(guessedArtist.group_size, mysteryArtist.group_size),
     };
@@ -134,6 +143,7 @@ module.exports = {
     calculateYearFeedback,
     calculateGenreFeedback,
     calculateNationalityFeedback,
+    calculateGenderFeedback,
     calculatePopularityFeedback,
     calculateGroupSizeFeedback,
 };

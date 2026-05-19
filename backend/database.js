@@ -5,13 +5,13 @@ const { Pool } = require('pg');
 // Create PostgreSQL connection pool
 const pool = new Pool({
     host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 5432,
+    port: parseInt(process.env.DB_PORT) || 5432,
     database: process.env.DB_NAME || 'spotle_tn',
     user: process.env.DB_USER || 'postgres',
     password: process.env.DB_PASSWORD,
     max: 20,
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
+    connectionTimeoutMillis: 10000, // Increased: Docker networking may add latency at startup
 });
 
 // Test connection on startup
@@ -37,9 +37,9 @@ const query = async (text, params) => {
     }
 };
 
-// Get all active artists (for autocomplete)
+// Get all artists (for autocomplete - allows guessing inactive artists)
 const getAllArtists = async () => {
-    const sql = 'SELECT id, name FROM artists WHERE active = true ORDER BY name ASC';
+    const sql = 'SELECT id, name FROM artists ORDER BY name ASC';
     const result = await query(sql);
     return result.rows;
 };

@@ -302,7 +302,7 @@ body {
 
 .guess-grid-header {
   display: grid;
-  grid-template-columns: 2fr repeat(5, 1fr);
+  grid-template-columns: 2fr repeat(6, 1fr);
   gap: var(--spacing-xs);
   margin-bottom: var(--spacing-sm);
   padding-bottom: var(--spacing-sm);
@@ -328,7 +328,7 @@ body {
 
 .guess-row {
   display: grid;
-  grid-template-columns: 2fr repeat(5, 1fr);
+  grid-template-columns: 2fr repeat(6, 1fr);
   gap: var(--spacing-xs);
   animation: slideIn var(--transition-normal);
 }
@@ -619,7 +619,7 @@ body {
 
   .guess-grid-header,
   .guess-row {
-    grid-template-columns: 1.5fr repeat(5, 1fr);
+    grid-template-columns: 1.5fr repeat(6, 1fr);
     font-size: 0.75rem;
   }
 

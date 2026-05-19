@@ -63,13 +63,21 @@ const showToast = (message, duration = 3000) => {
 
 // ===== LocalStorage Functions =====
 const saveGameState = () => {
-    localStorage.setItem(`spotle_game_${gameState.date}`, JSON.stringify(gameState));
+    // Convert Set to Array for JSON serialization
+    const stateToSave = {
+        ...gameState,
+        usedArtistIds: [...gameState.usedArtistIds]
+    };
+    localStorage.setItem(`spotle_game_${gameState.date}`, JSON.stringify(stateToSave));
 };
 
 const loadGameState = (date) => {
     const saved = localStorage.getItem(`spotle_game_${date}`);
     if (saved) {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        // Convert usedArtistIds back to a Set
+        parsed.usedArtistIds = new Set(parsed.usedArtistIds || []);
+        return parsed;
     }
     return null;
 };
@@ -103,7 +111,9 @@ const renderAutocomplete = (artists) => {
     }
 
     elements.autocompleteDropdown.innerHTML = artists.map((artist, index) => {
-        const isUsed = gameState.usedArtistIds.has(artist.id);
+        // BUG FIX: usedArtistIds stores values from PostgreSQL (may be int or string).
+        // Compare as strings to avoid type mismatch.
+        const isUsed = gameState.usedArtistIds.has(String(artist.id));
         return `
       <div class="autocomplete-item ${index === selectedIndex ? 'selected' : ''} ${isUsed ? 'disabled' : ''}" 
            data-artist-id="${artist.id}" 
@@ -120,7 +130,8 @@ const renderAutocomplete = (artists) => {
         if (!item.classList.contains('disabled')) {
             item.addEventListener('click', () => {
                 const artistId = item.getAttribute('data-artist-id');
-                const artist = gameState.artists.find(a => a.id === artistId);
+                // BUG FIX: find by String comparison so int IDs from DB match string from dataset
+                const artist = gameState.artists.find(a => String(a.id) === String(artistId));
                 selectArtist(artist);
             });
         }
@@ -128,7 +139,13 @@ const renderAutocomplete = (artists) => {
 };
 
 const selectArtist = async (artist) => {
-    if (!artist || gameState.usedArtistIds.has(artist.id)) {
+    if (!artist) {
+        showToast('Artist not found. Please try again.');
+        return;
+    }
+
+    // BUG FIX: compare as strings
+    if (gameState.usedArtistIds.has(String(artist.id))) {
         showToast('Artist already guessed!');
         return;
     }
@@ -152,7 +169,6 @@ const renderGuessRow = (guess, feedback) => {
     const row = document.createElement('div');
     row.className = 'guess-row';
 
-    // Artist name
     row.innerHTML = `
     <div class="grid-cell artist-name">${guess.name}</div>
     <div class="grid-cell ${feedback.debut_year.color}">
@@ -160,6 +176,7 @@ const renderGuessRow = (guess, feedback) => {
     </div>
     <div class="grid-cell ${feedback.genre.color}">${guess.genre}</div>
     <div class="grid-cell ${feedback.nationality.color}">${guess.nationality}</div>
+    <div class="grid-cell ${feedback.gender ? feedback.gender.color : 'gray'}">${guess.gender || ''}</div>
     <div class="grid-cell ${feedback.popularity_rank.color}">
       ${guess.popularity_rank}${feedback.popularity_rank.arrow ? `<span class="arrow">${feedback.popularity_rank.arrow === 'up' ? '⬆️' : '⬇️'}</span>` : ''}
     </div>
@@ -184,8 +201,8 @@ const makeGuess = async (artistId) => {
         // Call API
         const response = await API.submitGuess(artistId, gameState.date);
 
-        // Update state
-        gameState.usedArtistIds.add(artistId);
+        // BUG FIX: store as string so Set.has() comparison works consistently
+        gameState.usedArtistIds.add(String(artistId));
         gameState.attempts_used++;
         gameState.guesses.push({
             artist: response.guessed_artist,
@@ -193,7 +210,7 @@ const makeGuess = async (artistId) => {
             correct: response.correct
         });
 
-        // Render guess
+        // Render guess row
         renderGuessRow(response.guessed_artist, response.feedback);
 
         // Update attempts counter
@@ -220,6 +237,62 @@ const makeGuess = async (artistId) => {
 };
 
 // ===== Modal Functions =====
+let currentAudio = null;
+
+const playArtistSong = async (artistName) => {
+    try {
+        // We add Tunisian / Arabic keywords for better search accuracy
+        const searchTerm = encodeURIComponent(artistName + ' tunisie');
+        const response = await fetch(`https://itunes.apple.com/search?term=${searchTerm}&entity=song&limit=1`);
+        const data = await response.json();
+        
+        let track = null;
+        if (data.results && data.results.length > 0) {
+            track = data.results[0];
+        } else {
+            // Fallback search just the name if first search failed
+            const fallbackResponse = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(artistName)}&entity=song&limit=1`);
+            const fallbackData = await fallbackResponse.json();
+            if (fallbackData.results && fallbackData.results.length > 0) {
+                track = fallbackData.results[0];
+            }
+        }
+
+        if (track && track.previewUrl) {
+            const audioContainer = document.createElement('div');
+            audioContainer.style.marginTop = '1rem';
+            audioContainer.style.textAlign = 'center';
+            audioContainer.style.background = 'var(--color-bg-elevated)';
+            audioContainer.style.padding = '10px';
+            audioContainer.style.borderRadius = '12px';
+            audioContainer.style.border = '1px solid hsla(280, 85%, 62%, 0.3)';
+
+            audioContainer.innerHTML = `
+                <p style="font-size: 0.9rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">
+                    🎵 Now Playing: <strong>${track.trackName}</strong>
+                </p>
+                <audio id="artistAudio" controls autoplay style="width: 100%; height: 35px; border-radius: 8px;">
+                    <source src="${track.previewUrl}" type="audio/mpeg">
+                </audio>
+            `;
+            elements.modalBody.appendChild(audioContainer);
+            
+            currentAudio = document.getElementById('artistAudio');
+            currentAudio.volume = 0.5;
+            
+            // Explicitly call play() to ensure it starts (browsers sometimes ignore the autoplay attribute on dynamic elements)
+            const playPromise = currentAudio.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                    console.log('Autoplay was prevented by the browser. User must click play.', error);
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Error fetching song preview:', error);
+    }
+};
+
 const showWinModal = (artist) => {
     elements.modalHeader.innerHTML = '<h2>🎉 Congratulations!</h2>';
     elements.modalBody.innerHTML = `
@@ -234,6 +307,7 @@ const showWinModal = (artist) => {
   `;
     elements.resultModal.classList.add('show');
     startCountdown();
+    playArtistSong(artist.name);
 };
 
 const showLoseModal = async () => {
@@ -262,38 +336,40 @@ const showLoseModal = async () => {
     `;
         elements.resultModal.classList.add('show');
         startCountdown();
+        playArtistSong(artist.name);
     } catch (error) {
         console.error('Error fetching result:', error);
     }
 };
 
 const startCountdown = () => {
-    // Set target time: 1 minute from now
-    const targetTime = new Date().getTime() + 60000; // 60000ms = 1 minute
+    // Calculate time until next midnight (local time)
+    const now = new Date();
+    const targetTime = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0).getTime();
 
     const updateCountdown = () => {
-        const now = new Date().getTime();
-        const diff = targetTime - now;
+        const currentTime = new Date().getTime();
+        const diff = targetTime - currentTime;
 
-        // Auto-reload when time is up
         if (diff <= 0) {
             location.reload();
             return;
         }
 
-        const minutes = Math.floor(diff / (1000 * 60));
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
         const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
         const countdownEl = document.getElementById('countdown');
         if (countdownEl) {
-            // Display as MM:SS format
-            countdownEl.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            countdownEl.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         }
     };
 
     updateCountdown();
     setInterval(updateCountdown, 1000);
 };
+
 // ===== Share Function =====
 const generateShareText = () => {
     const dayNum = calculateDayNumber(gameState.date);
@@ -305,17 +381,16 @@ const generateShareText = () => {
         text += `❌ ${gameState.attempts_used}/${gameState.max_guesses}\n\n`;
     }
 
-    // Generate emoji grid
     gameState.guesses.forEach(guess => {
         const feedback = guess.feedback;
         let row = '';
-
-        ['debut_year', 'genre', 'nationality', 'popularity_rank', 'group_size'].forEach(attr => {
-            if (feedback[attr].color === 'green') row += '🟩';
-            else if (feedback[attr].color === 'yellow') row += '🟨';
-            else row += '⬜';
+        ['debut_year', 'genre', 'nationality', 'gender', 'popularity_rank', 'group_size'].forEach(attr => {
+            if (feedback[attr]) {
+                if (feedback[attr].color === 'green') row += '🟩';
+                else if (feedback[attr].color === 'yellow') row += '🟨';
+                else row += '⬜';
+            }
         });
-
         text += row + '\n';
     });
 
@@ -331,7 +406,6 @@ const shareResult = () => {
             text: shareText
         }).catch(err => console.log('Error sharing:', err));
     } else {
-        // Fallback: copy to clipboard
         navigator.clipboard.writeText(shareText).then(() => {
             showToast('Result copied to clipboard!');
         }).catch(err => {
@@ -395,7 +469,8 @@ elements.artistSearch.addEventListener('keydown', (e) => {
         e.preventDefault();
         if (selectedIndex >= 0 && items[selectedIndex]) {
             const artistId = items[selectedIndex].getAttribute('data-artist-id');
-            const artist = gameState.artists.find(a => a.id === artistId);
+            // BUG FIX: String comparison for ID matching
+            const artist = gameState.artists.find(a => String(a.id) === String(artistId));
             selectArtist(artist);
         }
     } else if (e.key === 'Escape') {
@@ -414,6 +489,9 @@ document.addEventListener('click', (e) => {
 elements.shareBtn.addEventListener('click', shareResult);
 elements.closeModalBtn.addEventListener('click', () => {
     elements.resultModal.classList.remove('show');
+    if (currentAudio) {
+        currentAudio.pause();
+    }
 });
 elements.statsBtn.addEventListener('click', showStatsModal);
 elements.closeStatsBtn.addEventListener('click', () => {
@@ -426,17 +504,12 @@ elements.closeInstructions.addEventListener('click', () => {
     localStorage.setItem('spotle_instructions_seen', 'true');
 });
 
-// Reset game
-e// Reset game - FIXED VERSION
+// Reset game (single listener - de-duplicated)
 elements.resetBtn.addEventListener('click', () => {
-    if (confirm('Are you sure you want to reset today\'s game? This will clear your progress!')) {
-        // Get date reliably - from gameState or calculate it
+    if (confirm("Are you sure you want to reset today's game? This will clear your progress!")) {
         const date = gameState.date || getTodayDate();
 
-        // Remove the game state
-        localStorage.removeItem(`spotle_game_${date}`);
-
-        // Also clear any other day states for a clean slate (optional)
+        // Clear all game states
         const keysToRemove = [];
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
@@ -447,17 +520,16 @@ elements.resetBtn.addEventListener('click', () => {
         keysToRemove.forEach(key => localStorage.removeItem(key));
 
         showToast('Game reset! Refreshing...');
-
-        // Use a slightly longer delay to ensure storage is cleared
         setTimeout(() => {
             location.reload();
-        }, 1500);
+        }, 1200);
     }
 });
+
 // ===== Initialization =====
 const initGame = async () => {
     try {
-        // Get today's date
+        // Get today's date from the API
         const todayData = await API.fetchToday();
         gameState.date = todayData.date;
         gameState.max_guesses = todayData.max_guesses;
@@ -466,13 +538,17 @@ const initGame = async () => {
         const dayNum = calculateDayNumber(gameState.date);
         elements.dayCounter.textContent = `Day #${dayNum}`;
 
-        // Load artists
+        // Load artists for autocomplete
         gameState.artists = await API.fetchArtists();
 
         // Check for saved game state
         const savedState = loadGameState(gameState.date);
         if (savedState) {
+            // Keep the freshly fetched artists, don't overwrite them with old localStorage data
+            const freshArtists = gameState.artists;
             gameState = savedState;
+            gameState.artists = freshArtists;
+            
             renderAllGuesses();
             elements.attemptsUsed.textContent = gameState.attempts_used;
 
@@ -484,7 +560,6 @@ const initGame = async () => {
                 showLoseModal();
             }
         } else {
-            // Initialize new game
             elements.attemptsUsed.textContent = '0';
         }
 
@@ -496,25 +571,13 @@ const initGame = async () => {
             elements.instructions.classList.add('hidden');
         }
 
-        console.log('Game initialized successfully');
+        console.log('✓ Game initialized successfully');
     } catch (error) {
         console.error('Error initializing game:', error);
         showToast('Error loading game. Please refresh the page.');
     }
 };
-elements.resetBtn.addEventListener('click', () => {
-    if (confirm("Are you sure you want to reset today's game?")) {
-        const date = gameState.date || getTodayDate();
 
-        localStorage.removeItem(`spotle_game_${date}`);
-
-        showToast('Game reset! Refreshing...');
-
-        setTimeout(() => {
-            location.reload();
-        }, 1000);
-    }
-});
 // Start the game when DOM is ready
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initGame);

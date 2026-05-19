@@ -11,7 +11,17 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
-app.use(cors());
+// Allow requests from the nginx frontend (port 8080 in Docker) and any hosted domain
+app.use(cors({
+    origin: [
+        'http://localhost:8080',   // Docker / hosted frontend via nginx
+        'http://localhost:3000',   // Direct backend access in dev
+        'http://localhost',        // Plain localhost
+        /https?:\/\/.+/           // Any domain (for VPS / cloud hosting)
+    ],
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type']
+}));
 app.use(express.json());
 
 // Rate limiting - prevent spam guessing
@@ -35,7 +45,7 @@ app.get('/api/today', async (req, res) => {
         res.json({
             date: today,
             max_guesses: 10,
-            attributes: ['debut_year', 'genre', 'nationality', 'popularity_rank', 'group_size']
+            attributes: ['debut_year', 'genre', 'nationality', 'gender', 'popularity_rank', 'group_size']
         });
     } catch (error) {
         console.error('Error in /api/today:', error);
@@ -96,6 +106,7 @@ app.post('/api/guess', async (req, res) => {
                 debut_year: guessedArtist.debut_year,
                 genre: guessedArtist.genre,
                 nationality: guessedArtist.nationality,
+                gender: guessedArtist.gender,
                 popularity_rank: guessedArtist.popularity_rank,
                 group_size: guessedArtist.group_size
             },
@@ -129,6 +140,7 @@ app.get('/api/result', async (req, res) => {
                 debut_year: mysteryArtist.debut_year,
                 genre: mysteryArtist.genre,
                 nationality: mysteryArtist.nationality,
+                gender: mysteryArtist.gender,
                 popularity_rank: mysteryArtist.popularity_rank,
                 group_size: mysteryArtist.group_size
             }
@@ -152,11 +164,29 @@ app.use((error, req, res, next) => {
 
 // Initialize and start server
 const startServer = async () => {
-    try {
-        // Test database connection
-        await db.query('SELECT NOW()');
-        console.log('✓ Database connection successful');
+    // Retry DB connection up to 5 times with a 3-second pause between attempts.
+    // This handles the edge case where Docker healthcheck passes but the
+    // schema init scripts (01-schema.sql / 02-seed.sql) are still running.
+    const MAX_RETRIES = 5;
+    const RETRY_DELAY_MS = 3000;
 
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        try {
+            await db.query('SELECT NOW()');
+            console.log('✓ Database connection successful');
+            break; // Connection succeeded — exit retry loop
+        } catch (error) {
+            if (attempt === MAX_RETRIES) {
+                console.error(`❌ Database unavailable after ${MAX_RETRIES} attempts. Exiting.`);
+                console.error(error.message);
+                process.exit(1);
+            }
+            console.warn(`⏳ DB not ready (attempt ${attempt}/${MAX_RETRIES}), retrying in ${RETRY_DELAY_MS / 1000}s...`);
+            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+        }
+    }
+
+    try {
         // Initialize today's daily artist
         await dailyArtist.initializeDailyArtist();
 

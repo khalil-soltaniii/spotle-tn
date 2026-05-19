@@ -1,6 +1,14 @@
 // api.js - API communication layer
+HEAD
 // API_BASE_URL can be configured based on environment
 const API_BASE_URL = 'http://localhost:3000/api'; // Docker or production - update as needed
+
+// In Docker/production: nginx proxies /api → backend container (no hardcoded host needed)
+// In local dev: backend runs on localhost:3000
+const API_BASE_URL = (window.location.port === '8080' || window.location.hostname !== 'localhost')
+    ? '/api'                       // Docker / hosted: nginx proxies /api → backend
+    : 'http://localhost:3000/api'; // Pure local dev (opening index.html directly)
+587f1aa(feat: Add Gender column, iTunes Audio Previews, and Docker containerization)
 
 // API error handler
 const handleApiError = (error) => {
