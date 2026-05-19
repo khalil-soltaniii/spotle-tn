@@ -123,6 +123,24 @@ INSERT INTO artists (name, debut_year, genre, nationality, popularity_rank, grou
 ('Sofiene Safi',       2006, 'Mezoued',   'Tunisia', 65, 1, 'male', true),
 ('Mourad Jebali',      2000, 'Mezoued',   'Tunisia', 66, 1, 'male', true),
 ('Ali Guesmi',         1997, 'Mezoued',   'Tunisia', 67, 1, 'male', true),
+('Salah Farzit',       1985, 'Mezoued', 'Tunisia', 31, 1, 'male', true),
+('Samir Loussif',      1988, 'Mezoued', 'Tunisia', 32, 1, 'male', true),
+('Lotfi Jormana',      2000, 'Mezoued', 'Tunisia', 33, 1, 'male', true),
+
+-- MODERN MEZOUED / STREET POPULAR
+('Cheb Salih',         2005, 'Mezoued', 'Tunisia', 34, 1, 'male', true),
+('Cheb Houssem',       2010, 'Mezoued', 'Tunisia', 35, 1, 'male', true),
+('DJ Costa',           2015, 'Popular', 'Tunisia', 36, 1, 'male', true),
+('DJ Hamida TN',       2016, 'Popular', 'Tunisia', 37, 1, 'male', true),
+
+-- WEDDING / CHAABI SCENE
+('Walid Ettounsi',     2012, 'Popular', 'Tunisia', 38, 1, 'male', true),
+('Kamel Touati Music', 2008, 'Chaabi',  'Tunisia', 39, 1, 'male', true),
+('Fathi Barka',        2003, 'Chaabi',  'Tunisia', 40, 1, 'male', true),
+
+-- FEMALE POPULAR / CHAABI
+('Soumaya Baalouch',   2010, 'Popular', 'Tunisia', 42, 1, 'female', true),
+('Dorsaf Hamdani',     2005, 'Traditional', 'Tunisia', 43, 1, 'female', true),
 
 -- Wedding / Popular Pop
 ('Omar Dhifallah',     2010, 'Popular',   'Tunisia', 68, 1, 'male', true),
@@ -143,7 +161,25 @@ INSERT INTO artists (name, debut_year, genre, nationality, popularity_rank, grou
 ('MC Kanz',           2014, 'Rap', 'Tunisia', 84, 1, 'male', true),
 ('Vipa',              2019, 'Rap', 'Tunisia', 85, 1, 'male', true),
 ('RedStar',           2017, 'Rap', 'Tunisia', 89, 1, 'male', true),
-('Zomra',             2020, 'Rap', 'Tunisia', 90, 1, 'male', true);
+('Zomra',             2020, 'Rap', 'Tunisia', 90, 1, 'male', true),
+('RARE',          2022, 'Trap',  'Tunisia', 28, 1, 'male', true),
+('NASTYSH!!T',    2021, 'Trap',  'Tunisia', 30, 1, 'male', true),
+('Omar Laya',     2020, 'Rap',   'Tunisia', 30, 1, 'male', true),
+('Soldjvt',       2022, 'Drill', 'Tunisia', 24, 1, 'male', true),
+('Emino',         2021, 'Trap',  'Tunisia', 26, 1, 'male', true),
+('Tati G13',      2020, 'Rap',   'Tunisia', 34, 1, 'male', true),
+('Linko',         2020, 'Trap',  'Tunisia', 29, 1, 'male', true),
+('Esserpent',     2021, 'Trap',  'Tunisia', 29, 1, 'male', true),
+('Dhalma',        2022, 'Drill', 'Tunisia', 29, 1, 'male', true),
+('Mehdi Mouelhi', 2018, 'Pop',   'Tunisia', 29, 1, 'male', true),
+('NVST',          2022, 'Electronic','Tunisia',28,1,'female',true),
+('Amon',          2021, 'Trap',  'Tunisia', 27, 1, 'male', true),
+('El Katiba',     2020, 'Rap',   'Tunisia', 26, 1, 'group',true),
+('BLVCK 7050',    2021, 'Trap',  'Tunisia', 29, 1, 'male', true),
+('Joujma',        2021, 'Rap',   'Tunisia', 28, 1, 'male', true),
+('SC Papi',       2023, 'Drill', 'Tunisia', 21, 1, 'male', true),
+('COSMIC',        2022, 'Trap',  'Tunisia', 25, 1, 'male', true),
+('Mizo-H',        2021, 'Trap',  'Tunisia', 25, 1, 'male', true);
 
 -- ─── Daily Artist Schedule ─────────────────────────────────────────────────────
 -- Seed a daily artist for every day in 2026 by rotating through artists.
