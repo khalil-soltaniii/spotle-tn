@@ -1,8 +1,6 @@
 // api.js - API communication layer
 // API_BASE_URL can be configured based on environment
-const API_BASE_URL = window.location.hostname === 'localhost'
-    ? 'http://localhost:3000/api'  // Local development
-    : 'http://localhost:3000/api'; // Docker or production - update as needed
+const API_BASE_URL = 'http://localhost:3000/api'; // Docker or production - update as needed
 
 // API error handler
 const handleApiError = (error) => {
