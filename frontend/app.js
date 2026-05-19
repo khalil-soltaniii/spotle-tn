@@ -388,6 +388,7 @@ const generateShareText = () => {
             if (feedback[attr]) {
                 if (feedback[attr].color === 'green') row += '🟩';
                 else if (feedback[attr].color === 'yellow') row += '🟨';
+                else if (feedback[attr].color === 'red') row += '🟥';
                 else row += '⬜';
             }
         });

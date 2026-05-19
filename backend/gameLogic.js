@@ -60,7 +60,7 @@ const calculateGenreFeedback = async (guessedGenre, mysteryGenre) => {
     if (related) {
         return { color: 'yellow' };
     } else {
-        return { color: 'gray' };
+        return { color: 'red' };
     }
 };
 

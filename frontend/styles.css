@@ -24,6 +24,8 @@
   --color-yellow-bg: hsla(45, 95%, 60%, 0.15);
   --color-gray: hsl(220, 10%, 40%);
   --color-gray-bg: hsla(220, 10%, 40%, 0.1);
+  --color-red: hsl(355, 75%, 55%);
+  --color-red-bg: hsla(355, 75%, 55%, 0.15);
 
   /* Spacing */
   --spacing-xs: 0.5rem;
@@ -370,6 +372,13 @@ body {
   background: var(--color-gray-bg);
   border: 2px solid var(--color-gray);
   color: var(--color-gray);
+  animation: cellReveal var(--transition-slow);
+}
+
+.grid-cell.red {
+  background: linear-gradient(135deg, var(--color-red-bg), var(--color-red-bg));
+  border: 2px solid var(--color-red);
+  color: var(--color-red);
   animation: cellReveal var(--transition-slow);
 }
 
