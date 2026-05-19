@@ -40,10 +40,15 @@ app.get('/api/health', (req, res) => {
 // GET /api/today - Get today's puzzle metadata
 app.get('/api/today', async (req, res) => {
     try {
-        const today = dailyArtist.getTodayDate();
+        // Select a random date from the seeded daily_artist table to give a new artist on every reload
+        const result = await db.query("SELECT TO_CHAR(date, 'YYYY-MM-DD') AS date FROM daily_artist ORDER BY RANDOM() LIMIT 1");
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'No daily artists seeded in database' });
+        }
+        const randomDate = result.rows[0].date;
 
         res.json({
-            date: today,
+            date: randomDate,
             max_guesses: 10,
             attributes: ['debut_year', 'genre', 'nationality', 'gender', 'popularity_rank', 'group_size']
         });
