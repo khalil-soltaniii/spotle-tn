@@ -13,12 +13,21 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 // Allow requests from the nginx frontend (port 8080 in Docker) and any hosted domain
 app.use(cors({
-    origin: [
-        'http://localhost:8080',   // Docker / hosted frontend via nginx
-        'http://localhost:3000',   // Direct backend access in dev
-        'http://localhost',        // Plain localhost
-        /https?:\/\/.+/           // Any domain (for VPS / cloud hosting)
-    ],
+   const allowedOrigins = [
+    'http://localhost:8080',
+    'http://localhost:3000',
+    'https://yourdomain.com'
+];
+
+app.use(cors({
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    }
+})),
     methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: ['Content-Type']
 }));
